@@ -1,73 +1,78 @@
 digraph all_states {
 
-  node [layer=all];
-  edge [layer=all];
+  before_existence [ label="no stack" shape="box" ]
+  before_existence -> CREATE_IN_PROGRESS [label="CreateStack"]
+  before_existence -> REVIEW_IN_PROGRESS [label="CreateChangeSet"]
 
-  layers="happy:sad"
+  CREATE_COMPLETE [ fillcolor="green" style=filled ]
+  CREATE_COMPLETE -> UPDATE_IN_PROGRESS [label="UpdateStack or\nExecuteChangeSet"]
+  CREATE_COMPLETE -> DELETE_IN_PROGRESS [label="DeleteStack"]
 
-  before_existence [ layer="happy" label="no stack" ]
-  after_existence [ layer="happy" label="no stack" ]
+  REVIEW_IN_PROGRESS [ style=dotted fillcolor="yellow" style=filled ]
+  REVIEW_IN_PROGRESS -> CREATE_IN_PROGRESS [label="ExecuteChangeSet"]
+  REVIEW_IN_PROGRESS -> DELETE_COMPLETE [label="DeleteStack"]
 
-  updateable_stack [ layer="happy" label="an updateable stack\n(various states)" color="transparent" ]
-  stuck_stack [ layer="sad" label="a non-updateable stack\n(various states)" color="transparent" ]
-  empty_stack [ layer="sad" label="non-deleted stack\nwith no extant resources\n(various states)" color="transparent" ]
+  CREATE_IN_PROGRESS [ style=dotted fillcolor="yellow" style=filled ]
+  CREATE_IN_PROGRESS -> CREATE_COMPLETE [label="success" color="green"]
+  CREATE_IN_PROGRESS -> ROLLBACK_IN_PROGRESS [label="failed (default)" color=red] 
+  CREATE_IN_PROGRESS -> CREATE_FAILED  [label="failed\nOnFailure==DO_NOTHING\nor DisableRollback==true" color="red"]
+  CREATE_IN_PROGRESS -> DELETE_IN_PROGRESS  [label="failed\nOnFailure==DELETE" color="red"]
 
-  empty_stack -> DELETE_IN_PROGRESS [ layer="sad" ]
+  CREATE_FAILED [ fillcolor="pink" style=filled ]
+  CREATE_FAILED -> DELETE_IN_PROGRESS [label="DeleteStack"]
 
-  CREATE_COMPLETE [ layer="happy" ]
-  REVIEW_IN_PROGRESS [ layer="happy" style=dotted ]
-  CREATE_IN_PROGRESS [ layer="happy" style=dotted ]
-  CREATE_FAILED [ layer="sad" ]
-  DELETE_COMPLETE [ layer="happy" ]
-  DELETE_FAILED [ layer="sad" ]
-  DELETE_IN_PROGRESS [ layer="happy" style=dotted ]
-  ROLLBACK_COMPLETE [ layer="sad" ]
-  ROLLBACK_FAILED [ layer="sad" ]
-  ROLLBACK_IN_PROGRESS [ layer="sad" style=dotted ]
-  UPDATE_COMPLETE [ layer="happy" ]
-  UPDATE_COMPLETE_CLEANUP_IN_PROGRESS [ layer="happy" style=dotted label="UPDATE_COMPLETE\nCLEANUP_IN_PROGRESS" ]
-  UPDATE_IN_PROGRESS [ layer="happy" style=dotted ]
-  UPDATE_ROLLBACK_COMPLETE [ layer="sad" ]
-  UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS [ layer="sad" style=dotted label="UPDATE_ROLLBACK_COMPLETE\nCLEANUP_IN_PROGRESS" ]
-  UPDATE_ROLLBACK_FAILED [ layer="sad" ]
-  UPDATE_ROLLBACK_IN_PROGRESS [ layer="sad" style=dotted ]
-
-  edge [layer=happy];
-  before_existence -> CREATE_IN_PROGRESS
-  before_existence -> REVIEW_IN_PROGRESS -> CREATE_IN_PROGRESS
-  CREATE_IN_PROGRESS -> CREATE_COMPLETE
-  CREATE_COMPLETE -> updateable_stack
-
-  REVIEW_IN_PROGRESS -> DELETE_COMPLETE
-
-  edge [layer=sad];
-  CREATE_IN_PROGRESS -> ROLLBACK_IN_PROGRESS -> ROLLBACK_COMPLETE
-  ROLLBACK_COMPLETE -> empty_stack
-  ROLLBACK_IN_PROGRESS -> ROLLBACK_FAILED
-  ROLLBACK_FAILED -> stuck_stack
-
-  edge [layer=sad];
-  CREATE_IN_PROGRESS -> CREATE_FAILED // ?
-  CREATE_FAILED -> empty_stack // ?
-  stuck_stack -> DELETE_IN_PROGRESS
-
-  edge [layer=happy];
-  updateable_stack -> UPDATE_IN_PROGRESS -> UPDATE_COMPLETE_CLEANUP_IN_PROGRESS -> UPDATE_COMPLETE -> updateable_stack
-
-  edge [layer=sad];
-  { UPDATE_IN_PROGRESS } -> UPDATE_ROLLBACK_IN_PROGRESS -> UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS -> { UPDATE_ROLLBACK_COMPLETE, UPDATE_ROLLBACK_FAILED }
-  UPDATE_ROLLBACK_COMPLETE -> updateable_stack
-  UPDATE_ROLLBACK_IN_PROGRESS -> UPDATE_ROLLBACK_FAILED -> stuck_stack // maybe?
-  UPDATE_ROLLBACK_FAILED -> UPDATE_ROLLBACK_IN_PROGRESS
-
-  edge [layer=happy];
-  updateable_stack -> DELETE_IN_PROGRESS
-  DELETE_IN_PROGRESS -> DELETE_COMPLETE
+  DELETE_COMPLETE [ fillcolor="green" style=filled  ]
   DELETE_COMPLETE -> after_existence [ label=" 90 days later" ]
 
-  edge [layer=sad];
-  DELETE_IN_PROGRESS -> DELETE_FAILED [ constraint="false" ]
-  DELETE_FAILED -> stuck_stack
+  DELETE_FAILED [ fillcolor="pink" style=filled ]
+  DELETE_FAILED ->  DELETE_IN_PROGRESS [label="DeleteStack\nfix or RetainResources"]
+
+  DELETE_IN_PROGRESS [ style=dotted fillcolor="yellow" style=filled ]
+  DELETE_IN_PROGRESS -> DELETE_COMPLETE [label="success" color="green" ]
+  DELETE_IN_PROGRESS -> DELETE_FAILED [ label="failed" color="red" ]
+
+  ROLLBACK_COMPLETE [ fillcolor="green" style=filled  ]
+  ROLLBACK_COMPLETE ->  DELETE_IN_PROGRESS [label="DeleteStack"]
+
+  ROLLBACK_FAILED [ fillcolor="pink" style=filled ]
+  ROLLBACK_FAILED -> DELETE_IN_PROGRESS [label="DeleteStack"]
+
+  ROLLBACK_IN_PROGRESS [ style=dotted fillcolor="yellow" style=filled ]
+  ROLLBACK_IN_PROGRESS -> ROLLBACK_COMPLETE [label="success" color="green"]
+  ROLLBACK_IN_PROGRESS -> ROLLBACK_FAILED [label="failed" color="red"]
+  ROLLBACK_IN_PROGRESS -> DELETE_IN_PROGRESS [label="DeleteStack"]
+
+  UPDATE_COMPLETE [ fillcolor="green" style=filled group="good" ]
+  UPDATE_COMPLETE -> DELETE_IN_PROGRESS  [label="DeleteStack"]
+  UPDATE_COMPLETE -> UPDATE_IN_PROGRESS [label="UpdateStack or\nExecuteChangeSet"]
+
+  UPDATE_COMPLETE_CLEANUP_IN_PROGRESS [ style=dotted label="UPDATE_COMPLETE\nCLEANUP_IN_PROGRESS" fillcolor="yellow" style=filled ]
+  UPDATE_COMPLETE_CLEANUP_IN_PROGRESS -> UPDATE_COMPLETE [label="success, resource(s)\ncould not be deleted" color="red"]
+  UPDATE_COMPLETE_CLEANUP_IN_PROGRESS -> UPDATE_COMPLETE [label="success" color="green"]
+
+  UPDATE_IN_PROGRESS [ style=dotted fillcolor="yellow" style=filled group="good" ]
+  UPDATE_IN_PROGRESS -> UPDATE_COMPLETE_CLEANUP_IN_PROGRESS [label="success" color="green"]
+  UPDATE_IN_PROGRESS -> UPDATE_ROLLBACK_IN_PROGRESS [label="failed" color=red ]
+  UPDATE_IN_PROGRESS -> UPDATE_ROLLBACK_IN_PROGRESS [label="CancelUpdateStack"]
+
+  UPDATE_ROLLBACK_COMPLETE [ fillcolor="green" style=filled group="good" ]
+  UPDATE_ROLLBACK_COMPLETE -> UPDATE_IN_PROGRESS [label="UpdateStack or\nExecuteChangeSet"]
+  UPDATE_ROLLBACK_COMPLETE -> DELETE_IN_PROGRESS [label="DeleteStack"]
+
+  UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS [ style=dotted label="UPDATE_ROLLBACK_COMPLETE\nCLEANUP_IN_PROGRESS" fillcolor="yellow" style=filled ]
+  UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS -> UPDATE_ROLLBACK_COMPLETE [label="success" color=green ]
+  UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS -> UPDATE_ROLLBACK_COMPLETE [label="success, resource(s)\ncould not be deleted" color=red ]
+
+  UPDATE_ROLLBACK_FAILED [ fillcolor="pink" style=filled ]
+  UPDATE_ROLLBACK_FAILED ->  DELETE_IN_PROGRESS [label="DeleteStack"]
+  UPDATE_ROLLBACK_FAILED -> UPDATE_ROLLBACK_IN_PROGRESS [label="ContinueUpdateRollback"]
+
+  UPDATE_ROLLBACK_IN_PROGRESS [ style=dotted fillcolor="yellow" style=filled ]
+  UPDATE_ROLLBACK_IN_PROGRESS -> UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS [label="success" color=green ]
+  UPDATE_ROLLBACK_IN_PROGRESS -> UPDATE_ROLLBACK_FAILED [label="failed" color="red"]
+
+
+  after_existence [ label="no stack" shape="box" ]
 
 }
-// # vi: set sw=2 et ai :
+
