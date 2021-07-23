@@ -42,7 +42,7 @@ digraph all_states {
   ROLLBACK_IN_PROGRESS -> ROLLBACK_FAILED [label="failed" color="red"]
   ROLLBACK_IN_PROGRESS -> DELETE_IN_PROGRESS [label="DeleteStack"]
 
-  UPDATE_COMPLETE [ fillcolor="green" style=filled group="good" ]
+  UPDATE_COMPLETE [ fillcolor="green" style=filled]
   UPDATE_COMPLETE -> DELETE_IN_PROGRESS  [label="DeleteStack"]
   UPDATE_COMPLETE -> UPDATE_IN_PROGRESS [label="UpdateStack or\nExecuteChangeSet"]
 
@@ -50,12 +50,12 @@ digraph all_states {
   UPDATE_COMPLETE_CLEANUP_IN_PROGRESS -> UPDATE_COMPLETE [label="success, resource(s)\ncould not be deleted" color="red"]
   UPDATE_COMPLETE_CLEANUP_IN_PROGRESS -> UPDATE_COMPLETE [label="success" color="green"]
 
-  UPDATE_IN_PROGRESS [ style=dotted fillcolor="yellow" style=filled group="good" ]
+  UPDATE_IN_PROGRESS [ style=dotted fillcolor="yellow" style=filled]
   UPDATE_IN_PROGRESS -> UPDATE_COMPLETE_CLEANUP_IN_PROGRESS [label="success" color="green"]
   UPDATE_IN_PROGRESS -> UPDATE_ROLLBACK_IN_PROGRESS [label="failed" color=red ]
   UPDATE_IN_PROGRESS -> UPDATE_ROLLBACK_IN_PROGRESS [label="CancelUpdateStack"]
 
-  UPDATE_ROLLBACK_COMPLETE [ fillcolor="green" style=filled group="good" ]
+  UPDATE_ROLLBACK_COMPLETE [ fillcolor="green" style=filled]
   UPDATE_ROLLBACK_COMPLETE -> UPDATE_IN_PROGRESS [label="UpdateStack or\nExecuteChangeSet"]
   UPDATE_ROLLBACK_COMPLETE -> DELETE_IN_PROGRESS [label="DeleteStack"]
 
